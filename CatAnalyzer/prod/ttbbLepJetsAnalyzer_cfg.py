@@ -71,7 +71,9 @@ process.ttbbLepJets = cms.EDAnalyzer('ttbbLepJetsAnalyzer',
 				     trigMuFilters     = cms.InputTag("filterTrigMU"),
 				     trigElFilters     = cms.InputTag("filterTrigEL"),
 				     trigElHTFilters   = cms.InputTag("filterTrigELHT"),
-				     recoFilters       = cms.InputTag("filterRECOMC"),
+				     recoFiltersMC       = cms.InputTag("filterRECOMC"),
+
+				     recoFilters       = cms.InputTag("filterRECO"),
                                      # Input Tags
                                      genWeightLabel    = cms.InputTag("flatGenWeights"),
                                      genLabel          = cms.InputTag("prunedGenParticles"),
@@ -113,7 +115,7 @@ process.TFileService = cms.Service("TFileService",
 # process.p = cms.Path(process.pileupWeight*
 #                      process.ttbarSingleLepton)
 process.p = cms.Path(process.flatGenWeights +
-                     process.filterRECOMC +
+                     process.filterRECOMC + process.filterRECO +
 		     process.filterTrigMU + process.filterTrigEL + process.filterTrigELHT +
                      process.pileupWeight +
                      process.ttbbLepJets + process.ttbbLepJetsQCD)
