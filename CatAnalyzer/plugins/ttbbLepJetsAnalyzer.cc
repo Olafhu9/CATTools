@@ -1250,7 +1250,7 @@ bool ttbbLepJetsAnalyzer::IsSelectMuon(const cat::Muon & i_muon_candidate)
   // Tight selection already defined into CAT::Muon
   GoodMuon &= (i_muon_candidate.passed(reco::Muon::CutBasedIdTight|reco::Muon::PFIsoTight));
 
-  GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
+  //GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
   GoodMuon &= (i_muon_candidate.pt()> 26);             // pT
   GoodMuon &= (std::abs(i_muon_candidate.eta())< 2.4); // eta
 
@@ -1275,7 +1275,7 @@ bool ttbbLepJetsAnalyzer::IsVetoMuon(const cat::Muon & i_muon_candidate)
   // Loose selection already defined into CAT::Muon
   GoodMuon &= (i_muon_candidate.isLooseMuon());
 
-  GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
+  //GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
   GoodMuon &= (i_muon_candidate.pt()> 15);             // pT
   GoodMuon &= (std::abs(i_muon_candidate.eta())< 2.4); // eta
 
@@ -1298,15 +1298,15 @@ bool ttbbLepJetsAnalyzer::IsSelectElectron(const cat::Electron & i_electron_cand
 {
   bool GoodElectron=true;
 
-  GoodElectron &= (i_electron_candidate.isPF() );                // PF
+//  GoodElectron &= (i_electron_candidate.isPF() );                // PF
   if (std::abs(i_electron_candidate.eta()) < 2.1 ) GoodElectron &= (i_electron_candidate.pt() > 30);  // pT
   else if (std::abs(i_electron_candidate.eta()) > 2.1
         && std::abs(i_electron_candidate.eta() < 2.4)) GoodElectron &= (i_electron_candidate.pt() > 34);
   GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
   GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
                    std::abs(i_electron_candidate.scEta()) > 1.566);
-  GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.479 && i_electron_candidate.dxy() < 0.05 && i_electron_candidate.dz() < 0.10)
-               || (std::abs(i_electron_candidate.scEta()) > 1.479 && i_electron_candidate.dxy() < 0.10 && i_electron_candidate.dz() < 0.20);   
+  GoodElectron &= ((std::abs(i_electron_candidate.scEta()) < 1.479 && std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10)
+               || (std::abs(i_electron_candidate.scEta()) > 1.479 && std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20));   
 
   // Electron cut based selection
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
@@ -1345,7 +1345,7 @@ bool ttbbLepJetsAnalyzer::IsVetoElectron(const cat::Electron & i_electron_candid
 {
   bool GoodElectron=true;
 
-  GoodElectron &= (i_electron_candidate.isPF() );                // PF
+//  GoodElectron &= (i_electron_candidate.isPF() );                // PF
   GoodElectron &= (i_electron_candidate.pt() > 15);              // pT
   GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.5);  // eta
 //  GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
