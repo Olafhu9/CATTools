@@ -85,6 +85,8 @@ private:
   edm::EDGetTokenT<cat::METCollection>           metToken_;
   edm::EDGetTokenT<int>                          pvToken_;
   edm::EDGetTokenT<int>                          nTrueVertToken_;
+
+  edm::EDGetTokenT<int>                          recoFiltersMCToken_;
   edm::EDGetTokenT<int>                          recoFiltersToken_;
   // Trigger
   edm::EDGetTokenT<int>                          trigMuFiltersToken_;
@@ -143,6 +145,10 @@ private:
   float b_Lepton_relIso;
   bool b_Lepton_isIso;
   std::vector<float> *b_Lepton_SF;
+
+  //for sync
+  float b_Lepton_dxy;
+  float b_Lepton_dz;
 
   // additional b jets 
   float b_addbjet1_pt; 
@@ -203,7 +209,7 @@ private:
   // Histograms: Number of Events and Weights
   TH1D *EventInfo, *ScaleWeights, *PDFWeights, *PSWeights;
   // Scale factor evaluators
-  BTagWeightEvaluator SF_deepCSV_;
+  BTagWeightEvaluator SF_deepCSV_, SF_deepJet_;
   ScaleFactorEvaluator SF_muonId_, SF_muonIso_, SF_muonTrg_,
                        SF_elecId_, SF_elecReco_, SF_elecZvtx_, SF_elecTrg_;
  
@@ -263,6 +269,7 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
 	          muonTrgSFSet.getParameter<std::vector<double>>("errors"     ));
  
   SF_deepCSV_.initCSVWeight(false, "deepcsv");
+  SF_deepJet_.initCSVWeight(false, "deepjet");
   
   // Weights
   auto genWeightLabel = iConfig.getParameter<edm::InputTag>("genWeightLabel");
@@ -292,6 +299,7 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
   metToken_          = consumes<cat::METCollection>           (iConfig.getParameter<edm::InputTag>("metLabel"));
   pvToken_           = consumes<int>                          (iConfig.getParameter<edm::InputTag>("pvLabel"));
   // Trigger 
+  recoFiltersMCToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("recoFiltersMC"));
   recoFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("recoFilters"));
   trigMuFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("trigMuFilters"));
   trigElFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("trigElFilters"));
@@ -362,6 +370,9 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
 
   tree->Branch("lepton_relIso", &b_Lepton_relIso, "lepton_relIso/F");
   tree->Branch("lepton_isIso",  &b_Lepton_isIso,  "lepton_isIso/O");
+//for sync
+  tree->Branch("lepton_dxy" ,  &b_Lepton_dxy,   "lepton_dxy/F" );
+  tree->Branch("lepton_dz" ,   &b_Lepton_dz,   "lepton_dz/F" );
 
   tree->Branch("jet_pt",            "std::vector<float>", &b_Jet_pt);
   tree->Branch("jet_eta",           "std::vector<float>", &b_Jet_eta);
@@ -530,6 +541,12 @@ ttbbLepJetsAnalyzer::~ttbbLepJetsAnalyzer()
 
   delete b_Jet_SF_deepCSV_30;
   delete b_Jet_SF_deepJet_30;
+  delete b_Jet_deepCSV;
+  delete b_Jet_deepJet;
+  delete b_Jet_deepCvsL;
+  delete b_Jet_deepCvsB;
+  delete b_Jet_deepJetCvsL;
+  delete b_Jet_deepJetCvsB;
 
 }
 
@@ -658,14 +675,18 @@ void ttbbLepJetsAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
     //---------------------------------------------------------------------------
     // MET optional filters
     //---------------------------------------------------------------------------
-    edm::Handle<int> recoFiltersHandle;
-    iEvent.getByToken(recoFiltersToken_, recoFiltersHandle);
-    METfiltered = *recoFiltersHandle == 0 ? true : false;
+    edm::Handle<int> recoFiltersMCHandle;
+    iEvent.getByToken(recoFiltersMCToken_, recoFiltersMCHandle);
+    METfiltered = *recoFiltersMCHandle == 0 ? true : false;
   }
 
   else{
     b_PUWeight  ->push_back(1.0);
     b_GenWeight = 1.0;
+
+    edm::Handle<int> recoFiltersHandle;
+    iEvent.getByToken(recoFiltersToken_, recoFiltersHandle);
+    METfiltered = *recoFiltersHandle == 0 ? true : false;
   }
 
   //---------------------------------------------------------------------------
@@ -1043,6 +1064,8 @@ void ttbbLepJetsAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
     ch_tag = 1; //electron + jets
     lepton.SetPtEtaPhiE(selectedElectrons[0].pt(), selectedElectrons[0].eta(), selectedElectrons[0].phi(), selectedElectrons[0].energy());
     b_Lepton_relIso = selectedElectrons.at(0).relIso(0.3);
+    b_Lepton_dxy = selectedElectrons.at(0).dxy();
+    b_Lepton_dz = selectedElectrons.at(0).dz();
     if( std::abs(selectedElectrons[0].scEta()) <= 1.479 && b_Lepton_relIso < 0.0287+0.506/static_cast<double>(lepton.Pt())) b_Lepton_isIso = true;
     else if( std::abs(selectedElectrons[0].scEta()) > 1.479 && b_Lepton_relIso < 0.0445+0.963/static_cast<double>(lepton.Pt())) b_Lepton_isIso = true;
 
@@ -1134,8 +1157,12 @@ void ttbbLepJetsAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
     // Initialize SF_btag
     // Jet_SF_CSV[Scenario][SystVariations];
     float Jet_SF_deepCSV[1][19];
+    float Jet_SF_deepJet[1][19];
     for (unsigned int ipTj=0; ipTj<1; ipTj++){
-       for (unsigned int iu=0; iu<19; iu++) Jet_SF_deepCSV[ipTj][iu] = 1.0;
+      for (unsigned int iu=0; iu<19; iu++){
+        Jet_SF_deepCSV[ipTj][iu] = 1.0;
+        Jet_SF_deepJet[ipTj][iu] = 1.0;
+      }
     }
 
     // Run again over all Jets (CSV order)
@@ -1168,31 +1195,21 @@ void ttbbLepJetsAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
         b_Jet_partonFlavour->push_back(jet.partonFlavour());
         b_Jet_hadronFlavour->push_back(jet.hadronFlavour());
 
-        // b-tag discriminant
-        float jet_btagDis_deepCSV = 
-	  jet.bDiscriminator(BTAG_DeepCSVb) + jet.bDiscriminator(BTAG_DeepCSVbb);
-	float jet_btagDis_deepJet = 
-	  jet.bDiscriminator(BTAG_DeepJetb)  + 
-	  jet.bDiscriminator(BTAG_DeepJetbb) + jet.bDiscriminator(BTAG_DeepJetlepb);
+        // btag discriminant
+        float jet_btagDis_deepCSV = jet.bDiscriminator(BTAG_DeepCSVb) + jet.bDiscriminator(BTAG_DeepCSVbb);
+        float jet_btagDis_deepJet = jet.bDiscriminator(BTAG_DeepJetb) + jet.bDiscriminator(BTAG_DeepJetbb) + jet.bDiscriminator(BTAG_DeepJetlepb);
         b_Jet_deepCSV->push_back(jet_btagDis_deepCSV);
         b_Jet_deepJet->push_back(jet_btagDis_deepJet);
 
         // c-tag discriminant
-        float jet_btagDis_deepCvsL = jet.bDiscriminator(BTAG_DeepCSVc)/
-	    (jet.bDiscriminator(BTAG_DeepCSVc) + jet.bDiscriminator(BTAG_DeepCSVudsg));
-        float jet_btagDis_deepCvsB = jet.bDiscriminator(BTAG_DeepCSVc)/
-	    (jet.bDiscriminator(BTAG_DeepCSVc) +
-	     jet.bDiscriminator(BTAG_DeepCSVb) + jet.bDiscriminator(BTAG_DeepCSVbb));
-	float jet_btagDis_deepJetCvsL = jet.bDiscriminator(BTAG_DeepJetc)/
-	    (jet.bDiscriminator(BTAG_DeepJetc)   +
-	     jet.bDiscriminator(BTAG_DeepJetuds) + jet.bDiscriminator(BTAG_DeepJetg));
-	float jet_btagDis_deepJetCvsB = jet.bDiscriminator(BTAG_DeepJetc)/
-	    (jet.bDiscriminator(BTAG_DeepJetc)  + jet.bDiscriminator(BTAG_DeepJetb) +
-	     jet.bDiscriminator(BTAG_DeepJetbb) + jet.bDiscriminator(BTAG_DeepJetlepb));
+        float jet_btagDis_deepCvsL = jet.bDiscriminator(BTAG_DeepCSVc)/(jet.bDiscriminator(BTAG_DeepCSVc) + jet.bDiscriminator(BTAG_DeepCSVudsg));
+        float jet_btagDis_deepCvsB = jet.bDiscriminator(BTAG_DeepCSVc)/(jet.bDiscriminator(BTAG_DeepCSVc) + jet.bDiscriminator(BTAG_DeepCSVb) + jet.bDiscriminator(BTAG_DeepCSVbb));
+        float jet_btagDis_deepJetCvsL = jet.bDiscriminator(BTAG_DeepJetc)/(jet.bDiscriminator(BTAG_DeepJetc) + jet.bDiscriminator(BTAG_DeepJetuds) + jet.bDiscriminator(BTAG_DeepJetg));
+        float jet_btagDis_deepJetCvsB = jet.bDiscriminator(BTAG_DeepJetc)/(jet.bDiscriminator(BTAG_DeepJetc)  + jet.bDiscriminator(BTAG_DeepJetb) + jet.bDiscriminator(BTAG_DeepJetbb) + jet.bDiscriminator(BTAG_DeepJetlepb));
         b_Jet_deepCvsL->push_back(jet_btagDis_deepCvsL);
-	b_Jet_deepCvsB->push_back(jet_btagDis_deepCvsB);
-	b_Jet_deepJetCvsL->push_back(jet_btagDis_deepJetCvsL);
-	b_Jet_deepJetCvsB->push_back(jet_btagDis_deepJetCvsB);
+        b_Jet_deepCvsB->push_back(jet_btagDis_deepCvsB);
+        b_Jet_deepJetCvsL->push_back(jet_btagDis_deepJetCvsL);
+        b_Jet_deepJetCvsB->push_back(jet_btagDis_deepJetCvsB);
 
         if(isMC_) {
           // JES
@@ -1207,20 +1224,29 @@ void ttbbLepJetsAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
 
           // Ref: https://twiki.cern.ch/twiki/bin/view/CMS/BTagShapeCalibration
           // Saving the central SF and the 18 syst. unc. for:
-          if(jet.pt() > 30.) for (unsigned int iu=0; iu<19; iu++) Jet_SF_deepCSV[0][iu] *= SF_deepCSV_.getSF(jet, iu);
-
-        } // if(isMC_)	
+          if(jet.pt() > 30.){
+            for (unsigned int iu=0; iu<19; iu++){
+              Jet_SF_deepCSV[0][iu] *= SF_deepCSV_.getSF(jet, iu);
+              Jet_SF_deepJet[0][iu] *= SF_deepJet_.getSF(jet, iu);
+            }
+          }
+        } // if(isMC_)
       }// if(GoodJets)
     }// for(AllJets)
     
     // Number of Jets (easy cross check)
     b_Jet_Number = N_GoodJets;
 
-    for (unsigned int iu=0; iu<19; iu++) b_Jet_SF_deepCSV_30->push_back(1.0);
+    for (unsigned int iu=0; iu<19; iu++) {
+      b_Jet_SF_deepCSV_30->push_back(1.0);
+      b_Jet_SF_deepJet_30->push_back(1.0);
+    }
     (*b_Jet_SF_deepCSV_30)[0] = Jet_SF_deepCSV[0][0]; //Central
+    (*b_Jet_SF_deepJet_30)[0] = Jet_SF_deepJet[0][0]; //Central
     // To save only the error
     for (unsigned int iu=1; iu<19; iu++){
       (*b_Jet_SF_deepCSV_30)[iu] = std::abs(Jet_SF_deepCSV[0][iu] - Jet_SF_deepCSV[0][0]) ; // Syst. Unc.
+      (*b_Jet_SF_deepJet_30)[iu] = std::abs(Jet_SF_deepJet[0][iu] - Jet_SF_deepJet[0][0]) ; // Syst. Unc.
     }
 
     //---------------------------------------------------------------------------
@@ -1243,8 +1269,8 @@ bool ttbbLepJetsAnalyzer::IsSelectMuon(const cat::Muon & i_muon_candidate)
   // Tight selection already defined into CAT::Muon
   GoodMuon &= (i_muon_candidate.passed(reco::Muon::CutBasedIdTight|reco::Muon::PFIsoTight));
 
-  GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
-  GoodMuon &= (i_muon_candidate.pt()> 30);             // pT
+  //GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
+  GoodMuon &= (i_muon_candidate.pt()> 26);             // pT
   GoodMuon &= (std::abs(i_muon_candidate.eta())< 2.4); // eta
 
   //----------------------------------------------------------------------------------------------------
@@ -1268,7 +1294,7 @@ bool ttbbLepJetsAnalyzer::IsVetoMuon(const cat::Muon & i_muon_candidate)
   // Loose selection already defined into CAT::Muon
   GoodMuon &= (i_muon_candidate.isLooseMuon());
 
-  GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
+  //GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
   GoodMuon &= (i_muon_candidate.pt()> 15);             // pT
   GoodMuon &= (std::abs(i_muon_candidate.eta())< 2.4); // eta
 
@@ -1291,11 +1317,15 @@ bool ttbbLepJetsAnalyzer::IsSelectElectron(const cat::Electron & i_electron_cand
 {
   bool GoodElectron=true;
 
-  GoodElectron &= (i_electron_candidate.isPF() );                // PF
-  GoodElectron &= (i_electron_candidate.pt() > 30);              // pT
+//  GoodElectron &= (i_electron_candidate.isPF() );                // PF
+  if (std::abs(i_electron_candidate.eta()) < 2.1 ) GoodElectron &= (i_electron_candidate.pt() > 30);  // pT
+  else if (std::abs(i_electron_candidate.eta()) > 2.1
+        && std::abs(i_electron_candidate.eta() < 2.4)) GoodElectron &= (i_electron_candidate.pt() > 34);
   GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
   GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
                    std::abs(i_electron_candidate.scEta()) > 1.566);
+  GoodElectron &= ((std::abs(i_electron_candidate.scEta()) < 1.479 && std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10)
+               || (std::abs(i_electron_candidate.scEta()) > 1.479 && std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20));   
 
   // Electron cut based selection
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
@@ -1334,11 +1364,11 @@ bool ttbbLepJetsAnalyzer::IsVetoElectron(const cat::Electron & i_electron_candid
 {
   bool GoodElectron=true;
 
-  GoodElectron &= (i_electron_candidate.isPF() );                // PF
+//  GoodElectron &= (i_electron_candidate.isPF() );                // PF
   GoodElectron &= (i_electron_candidate.pt() > 15);              // pT
-  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
-  GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
-                   std::abs(i_electron_candidate.scEta()) > 1.566);
+  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.5);  // eta
+//  GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
+//                   std::abs(i_electron_candidate.scEta()) > 1.566);
 
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
   GoodElectron &= i_electron_candidate.electronID("cutBasedElectronID-Fall17-94X-V2-veto") > 0;
