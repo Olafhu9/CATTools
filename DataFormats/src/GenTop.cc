@@ -28,6 +28,7 @@ GenTop::GenTop(){
   addbJets_ = {null, null};
   addcJets_ = {null, null};
   addbJetsHad_ = {null, null};
+  addbJets20Had_ = {null, null};
   addcJetsHad_ = {null, null};
   addJets_ = {null, null};
 }
@@ -61,6 +62,7 @@ GenTop::GenTop(const reco::Candidate & aGenTop) : reco::LeafCandidate(aGenTop) {
   JetsFromW_= {null, null, null, null};
   JetsFlavourFromW_= {0,0,0,0};
   addbJetsHad_ = {null, null};
+  addbJets20Had_ = {null, null};
   addcJetsHad_ = {null, null};
   addJets_ = {null, null};
 }
@@ -797,9 +799,20 @@ void GenTop::building(Handle<reco::GenJetCollection> genJets, Handle<reco::GenPa
       addbJetsHad_[i] = addbJetsBHad[i];
     }
     NaddbJetsBHad_++;
-    if( addbJetsBHad[i].pt() > 20 && std::abs(addbJetsBHad[i].eta()) < 2.5) NaddbJets20BHad_++;
+//    if( addbJetsBHad[i].pt() > 20 && std::abs(addbJetsBHad[i].eta()) < 2.5) NaddbJets20BHad_++;
+    if( addbJetsBHad[i].pt() > 20 && std::abs(addbJetsBHad[i].eta()) < 2.5) {
+      NaddbJets20BHad_++;
+      addbJets20Had_[0] = addbJetsBHad[i];
+      if( NaddbJets20BHad_ == 2 ) {
+        cout << "NaddbJets20BHad_? " << NaddbJets20BHad_ << endl;
+//        addbJets20Had_[ NaddbJets20BHad_ ] = addbJetsBHad[i];
+        addbJets20Had_[1] = addbJetsBHad[i];
+      }
+    }
     if( addbJetsBHad[i].pt() > 40 && std::abs(addbJetsBHad[i].eta()) < 2.5) NaddbJets40BHad_++;
   }
+  cout << "first pT " << addbJets20Had_[0].Pt() << endl;
+  cout << "second pT " << addbJets20Had_[1].Pt() << endl;
 
   for( unsigned int i = 0, n = std::min(bJetsFromTop_.size(), bJetsFromTop.size()) ; i < n ; i++){
     bJetsFromTop_[i] = bJetsFromTop[i];

@@ -72,7 +72,19 @@ process.maxEvents.input = options.maxEvents
 # Default file here for test purpose
 if not options.inputFiles:
     if useMiniAOD:
-        process.source.fileNames = cms.untracked.vstring('file:/pnfs/knu.ac.kr/data/cms/store/user/jipark/public/cat10x_samples/TTToSemiLeptonic_062A981D-4A57-664A-A583-E803A658594B.root')
+        process.source.fileNames = cms.untracked.vstring(
+        #  'file:/pnfs/knu.ac.kr/data/cms/store/user/jipark/public/cat10x_samples/TTToSemiLeptonic_062A981D-4A57-664A-A583-E803A658594B.root'
+          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80001/48303D32-5F5E-4C4E-885D-0DD6CBEA9189.root',
+          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FEE9789E-1236-2044-A4D5-68873F7B3F9D.root',
+          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FE3FD7FB-8BC6-F04D-8731-F48DC1A286C9.root',
+          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FDDE7B05-E3A0-204F-8880-63DD6E7D616E.root',
+          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FDA9A83F-0B89-6E45-9B5D-924209D6AEFF.root',
+#          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FD64C44F-2D25-6B43-93C3-BF0398713527.root',
+#          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FD548FF3-E119-3841-BEC0-23933D82E0B6.root',  
+#          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FD230AED-F909-8A45-89DE-BA986A9F26AF.root',
+#          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FD13C685-245D-5046-B984-61087060FFCE.root',
+#          'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/80000/FCDC90D5-A5BC-4A48-B35C-B665DB8392FC.root',
+        )
 
 else:
     process.source.fileNames = options.inputFiles

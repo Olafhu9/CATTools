@@ -370,6 +370,9 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
 
   tree->Branch("lepton_relIso", &b_Lepton_relIso, "lepton_relIso/F");
   tree->Branch("lepton_isIso",  &b_Lepton_isIso,  "lepton_isIso/O");
+//for sync
+  tree->Branch("lepton_dxy" ,  &b_Lepton_dxy,   "lepton_dxy/F" );
+  tree->Branch("lepton_dz" ,   &b_Lepton_dz,   "lepton_dz/F" );
 
 //  //  for sync  //
 //  tree->Branch("is_e" ,            &b_is_e,             "is_e/O" );
@@ -1336,6 +1339,7 @@ bool ttbbLepJetsAnalyzer::IsSelectElectron(const cat::Electron & i_electron_cand
   if (std::abs(i_electron_candidate.eta()) < 2.1 ) GoodElectron &= (i_electron_candidate.pt() > 30);  // pT
   else if (std::abs(i_electron_candidate.eta()) > 2.1
         && std::abs(i_electron_candidate.eta() < 2.4)) GoodElectron &= (i_electron_candidate.pt() > 34);
+<<<<<<< HEAD
 //  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
   GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
                    std::abs(i_electron_candidate.scEta()) > 1.566);
@@ -1343,6 +1347,13 @@ bool ttbbLepJetsAnalyzer::IsSelectElectron(const cat::Electron & i_electron_cand
   else if (std::abs(i_electron_candidate.scEta()) > 1.479) GoodElectron &= (std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20);
   //GoodElectron &= ((std::abs(i_electron_candidate.scEta()) <= 1.479 && std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10)
   //             || (std::abs(i_electron_candidate.scEta()) > 1.479 && std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20));   
+=======
+  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
+  GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
+                   std::abs(i_electron_candidate.scEta()) > 1.566);
+  GoodElectron &= ((std::abs(i_electron_candidate.scEta()) < 1.479 && std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10)
+               || (std::abs(i_electron_candidate.scEta()) > 1.479 && std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20));   
+>>>>>>> 36a4afdeb0d897edd674829db5cf9392e8d90eaa
 
   // Electron cut based selection
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
