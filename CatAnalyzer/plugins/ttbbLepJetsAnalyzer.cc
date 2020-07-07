@@ -370,10 +370,26 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
 
   tree->Branch("lepton_relIso", &b_Lepton_relIso, "lepton_relIso/F");
   tree->Branch("lepton_isIso",  &b_Lepton_isIso,  "lepton_isIso/O");
-//for sync
-  tree->Branch("lepton_dxy" ,  &b_Lepton_dxy,   "lepton_dxy/F" );
-  tree->Branch("lepton_dz" ,   &b_Lepton_dz,   "lepton_dz/F" );
 
+//  //  for sync  //
+//  tree->Branch("is_e" ,            &b_is_e,             "is_e/O" );
+//  tree->Branch("is_mu" ,           &b_is_mu,            "is_mu/O" );
+//  tree->Branch("trigger_e" ,       &b_trigger_e,        "trigger_e/O" );
+//  tree->Branch("trigger_mu" ,      &b_trigger_mu,       "trigger_mu/O" );
+//
+//  tree->Branch("trigger_SF" ,      "std::vector<float>" &b_trigger_SF);
+//
+//  tree->Branch("nJets" ,           &b_Jet_Number,       "nJets/I" );
+//  tree->Branch("nBJets_deepJetM" , &b_NbJetsM,          "nBJets_deepJetM/I" );
+// 
+//  tree->Branch("nTruePV",          &b_nTruePV,          "nTruePV/I");
+//  tree->Branch("nGoodPV",          &b_nGoodPV,          "nGoodPV/I");
+//
+  tree->Branch("lepton_dxy" ,      &b_Lepton_dxy,       "lepton_dxy/F" );
+  tree->Branch("lepton_dz" ,       &b_Lepton_dz,        "lepton_dz/F" );
+//  tree->Branch("lepton_scEta" ,    &b_Lepton_scEta,     "lepton_scEta/F" );
+//  //  for sync  //
+  
   tree->Branch("jet_pt",            "std::vector<float>", &b_Jet_pt);
   tree->Branch("jet_eta",           "std::vector<float>", &b_Jet_eta);
   tree->Branch("jet_phi",           "std::vector<float>", &b_Jet_phi);
@@ -423,7 +439,6 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
     tree->Branch("gennu_eta",     &b_GenNu_eta,     "gennu_eta/F");
     tree->Branch("gennu_phi",     &b_GenNu_phi,     "gennu_phi/F");
     tree->Branch("gennu_e",       &b_GenNu_e,       "gennu_e/F");
-
 
     tree->Branch("addbjet1_pt",  &b_addbjet1_pt,  "addbjet1_pt/F"); 
     tree->Branch("addbjet1_eta", &b_addbjet1_eta, "addbjet1_eta/F"); 
@@ -1321,11 +1336,13 @@ bool ttbbLepJetsAnalyzer::IsSelectElectron(const cat::Electron & i_electron_cand
   if (std::abs(i_electron_candidate.eta()) < 2.1 ) GoodElectron &= (i_electron_candidate.pt() > 30);  // pT
   else if (std::abs(i_electron_candidate.eta()) > 2.1
         && std::abs(i_electron_candidate.eta() < 2.4)) GoodElectron &= (i_electron_candidate.pt() > 34);
-  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
+//  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
   GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
                    std::abs(i_electron_candidate.scEta()) > 1.566);
-  GoodElectron &= ((std::abs(i_electron_candidate.scEta()) < 1.479 && std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10)
-               || (std::abs(i_electron_candidate.scEta()) > 1.479 && std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20));   
+  if (std::abs(i_electron_candidate.scEta()) <= 1.479) GoodElectron &= (std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10);
+  else if (std::abs(i_electron_candidate.scEta()) > 1.479) GoodElectron &= (std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20);
+  //GoodElectron &= ((std::abs(i_electron_candidate.scEta()) <= 1.479 && std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10)
+  //             || (std::abs(i_electron_candidate.scEta()) > 1.479 && std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20));   
 
   // Electron cut based selection
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
