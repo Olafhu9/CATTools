@@ -798,21 +798,16 @@ void GenTop::building(Handle<reco::GenJetCollection> genJets, Handle<reco::GenPa
     if( i < 2 ){
       addbJetsHad_[i] = addbJetsBHad[i];
     }
-    NaddbJetsBHad_++;
-//    if( addbJetsBHad[i].pt() > 20 && std::abs(addbJetsBHad[i].eta()) < 2.5) NaddbJets20BHad_++;
-    if( addbJetsBHad[i].pt() > 20 && std::abs(addbJetsBHad[i].eta()) < 2.5) {
-      NaddbJets20BHad_++;
-      addbJets20Had_[0] = addbJetsBHad[i];
-      if( NaddbJets20BHad_ == 2 ) {
-        cout << "NaddbJets20BHad_? " << NaddbJets20BHad_ << endl;
-//        addbJets20Had_[ NaddbJets20BHad_ ] = addbJetsBHad[i];
-        addbJets20Had_[1] = addbJetsBHad[i];
-      }
+    else{
+      addbJetsHad_.push_back(addbJetsBHad[i]);
     }
+    NaddbJetsBHad_++;
+    if( addbJetsBHad[i].pt() > 20 && std::abs(addbJetsBHad[i].eta()) < 2.5) {
+      if ( NaddbJets20BHad_ < 2 ) addbJets20Had_[ NaddbJets20BHad_ ] = addbJetsBHad[i];
+        NaddbJets20BHad_++;
+      }
     if( addbJetsBHad[i].pt() > 40 && std::abs(addbJetsBHad[i].eta()) < 2.5) NaddbJets40BHad_++;
   }
-  cout << "first pT " << addbJets20Had_[0].Pt() << endl;
-  cout << "second pT " << addbJets20Had_[1].Pt() << endl;
 
   for( unsigned int i = 0, n = std::min(bJetsFromTop_.size(), bJetsFromTop.size()) ; i < n ; i++){
     bJetsFromTop_[i] = bJetsFromTop[i];
