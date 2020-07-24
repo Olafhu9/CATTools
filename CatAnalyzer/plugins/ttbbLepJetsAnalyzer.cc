@@ -88,7 +88,6 @@ private:
   edm::EDGetTokenT<cat::METCollection>           metToken_;
   edm::EDGetTokenT<int>                          pvToken_;
   edm::EDGetTokenT<int>                          nTrueVertToken_;
-  edm::EDGetTokenT<int>                          recoFiltersMCToken_; //for sync, MET filter
   edm::EDGetTokenT<int>                          recoFiltersToken_;
   // Trigger
   edm::EDGetTokenT<int>                          trigMuFiltersToken_;
@@ -301,8 +300,7 @@ ttbbLepJetsAnalyzer::ttbbLepJetsAnalyzer(const edm::ParameterSet& iConfig):
   metToken_          = consumes<cat::METCollection>           (iConfig.getParameter<edm::InputTag>("metLabel"));
   pvToken_           = consumes<int>                          (iConfig.getParameter<edm::InputTag>("pvLabel"));
   // Trigger 
-  recoFiltersMCToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("recoFilters")); //for sync, MET filter
-  recoFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("recoFilters")); 
+  recoFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("recoFilters"));
   trigMuFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("trigMuFilters"));
   trigElFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("trigElFilters"));
   trigElHTFiltersToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("trigElHTFilters"));
@@ -687,25 +685,21 @@ void ttbbLepJetsAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
     //---------------------------------------------------------------------------
     // MET optional filters
     //---------------------------------------------------------------------------
-    edm::Handle<int> recoFiltersMCHandle;
-    iEvent.getByToken(recoFiltersMCToken_, recoFiltersMCHandle);
-    METfiltered = *recoFiltersMCHandle == 0 ? true : false; //for sync, MET filter
+    edm::Handle<int> recoFiltersHandle;
+    iEvent.getByToken(recoFiltersToken_, recoFiltersHandle);
+    METfiltered = *recoFiltersHandle == 0 ? true : false;
   }
 
   else{
     b_PUWeight  ->push_back(1.0);
     b_PrefireWeight->push_back(1.0);
     b_GenWeight = 1.0;
-
-    edm::Handle<int> recoFiltersHandle; 
-    iEvent.getByToken(recoFiltersToken_, recoFiltersHandle);
-    METfiltered = *recoFiltersHandle == 0 ? true : false;
   }
 
   //---------------------------------------------------------------------------
   // Weights for Syst. Scale and PDF: ttbar
   //---------------------------------------------------------------------------
-  if(TTbarMC_ >= 1 ) {
+  if(TTbarMC_ == 1 ) {
     // Scale weights
     edm::Handle<std::vector<float>> scaleUpWeightsHandle, scaleDownWeightsHandle;
     iEvent.getByToken(scaleUpWeightToken_,   scaleUpWeightsHandle);
@@ -1264,8 +1258,8 @@ bool ttbbLepJetsAnalyzer::IsSelectMuon(const cat::Muon & i_muon_candidate)
   // Tight selection already defined into CAT::Muon
   GoodMuon &= (i_muon_candidate.passed(reco::Muon::CutBasedIdTight|reco::Muon::PFIsoTight));
 
-  //GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
-  GoodMuon &= (i_muon_candidate.pt()> 29);             // pT
+  GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
+  GoodMuon &= (i_muon_candidate.pt()> 30);             // pT
   GoodMuon &= (std::abs(i_muon_candidate.eta())< 2.4); // eta
 
   //----------------------------------------------------------------------------------------------------
@@ -1289,7 +1283,7 @@ bool ttbbLepJetsAnalyzer::IsVetoMuon(const cat::Muon & i_muon_candidate)
   // Loose selection already defined into CAT::Muon
   GoodMuon &= (i_muon_candidate.isLooseMuon());
 
-  //GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
+  GoodMuon &= (i_muon_candidate.isPFMuon());           // PF
   GoodMuon &= (i_muon_candidate.pt()> 15);             // pT
   GoodMuon &= (std::abs(i_muon_candidate.eta())< 2.4); // eta
 
@@ -1312,15 +1306,11 @@ bool ttbbLepJetsAnalyzer::IsSelectElectron(const cat::Electron & i_electron_cand
 {
   bool GoodElectron=true;
 
-  //GoodElectron &= (i_electron_candidate.isPF() );                // PF
-  GoodElectron &= ( ( i_electron_candidate.pt() > 34 && std::abs(i_electron_candidate.eta()) < 2.4 ) ||
-                    ( i_electron_candidate.pt() > 30 && std::abs(i_electron_candidate.eta()) < 2.1 )    ); // pT, eta
-
+  GoodElectron &= (i_electron_candidate.isPF() );                // PF
+  GoodElectron &= (i_electron_candidate.pt() > 30);              // pT
+  GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
   GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
                    std::abs(i_electron_candidate.scEta()) > 1.566);
-
-  if (std::abs(i_electron_candidate.scEta()) <= 1.479) GoodElectron &= (std::abs(i_electron_candidate.dxy()) < 0.05 && std::abs(i_electron_candidate.dz()) < 0.10);
-  else if (std::abs(i_electron_candidate.scEta()) > 1.479) GoodElectron &= (std::abs(i_electron_candidate.dxy()) < 0.10 && std::abs(i_electron_candidate.dz()) < 0.20); // IP cuts
 
   // Electron cut based selection
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
@@ -1359,11 +1349,11 @@ bool ttbbLepJetsAnalyzer::IsVetoElectron(const cat::Electron & i_electron_candid
 {
   bool GoodElectron=true;
 
-  //GoodElectron &= (i_electron_candidate.isPF() );                // PF
+  GoodElectron &= (i_electron_candidate.isPF() );                // PF
   GoodElectron &= (i_electron_candidate.pt() > 15);              // pT
   GoodElectron &= (std::abs(i_electron_candidate.eta()) < 2.4);  // eta
-  //GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
-  //                 std::abs(i_electron_candidate.scEta()) > 1.566);
+  GoodElectron &= (std::abs(i_electron_candidate.scEta()) < 1.4442 || // eta Super-Cluster
+                   std::abs(i_electron_candidate.scEta()) > 1.566);
 
   // From https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
   GoodElectron &= i_electron_candidate.electronID("cutBasedElectronID-Fall17-94X-V2-veto") > 0;
