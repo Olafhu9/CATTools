@@ -73,7 +73,8 @@ process.ttbbLepJets = cms.EDAnalyzer('ttbbLepJetsAnalyzer',
                                      trigMuFilters     = cms.InputTag("filterTrigMU"),
                                      trigElFilters     = cms.InputTag("filterTrigEL"),
                                      trigElHTFilters   = cms.InputTag("filterTrigELHT"),
-                                     recoFilters       = cms.InputTag("filterRECOMC"),
+                                     recoFiltersMC     = cms.InputTag("filterRECOMC"), #for sync, MET filter
+                                     recoFilters       = cms.InputTag("filterRECO"),
                                      # Input Tags
                                      genWeightLabel    = cms.InputTag("flatGenWeights"),
                                      genLabel          = cms.InputTag("prunedGenParticles"),
@@ -84,12 +85,12 @@ process.ttbbLepJets = cms.EDAnalyzer('ttbbLepJetsAnalyzer',
                                      muonLabel         = cms.InputTag("catMuons"),
                                      muonIdSF          = muonSFTightIdOnly94X,
                                      muonIsoSF         = muonSFTightIsoOnly94X,
-				     muonTrgSF         = trigSF_IsoMu27,
+                                     muonTrgSF         = trigSF_IsoMu27,
                                      electronLabel     = cms.InputTag("catElectrons"),
                                      elecIdSF          = electronSFCutBasedTightIDOnly94Xv2,
                                      elecRecoSF        = electronSFMVAWP80RecoOnly94Xv2,
                                      elecZvtxSF        = electronSFHLTZvtx94X,
-				     elecTrgSF         = trigSF_El35_El28HT150_ttH_legacy17_v1,
+                                     elecTrgSF         = trigSF_El35_El28HT150_ttH_legacy17_v1,
                                      jetLabel          = cms.InputTag("catJets"),
                                      metLabel          = cms.InputTag("catMETs"),
                                      pvLabel           = cms.InputTag("catVertex:nGoodPV"),
@@ -97,7 +98,7 @@ process.ttbbLepJets = cms.EDAnalyzer('ttbbLepJetsAnalyzer',
                                      triggerBits       = cms.InputTag("TriggerResults"), 
                                      triggerObjects    = cms.InputTag("catTrigger"), 
                                      JetMother         = cms.InputTag("genJetHadronFlavour:ancestors"),
-				     nTrueVertLabel    = cms.InputTag("pileupWeight:nTrueInteraction")
+                                     nTrueVertLabel    = cms.InputTag("pileupWeight:nTrueInteraction")
                                      )
 
 process.ttbbLepJetsQCD = process.ttbbLepJets.clone(
@@ -115,7 +116,7 @@ process.TFileService = cms.Service("TFileService",
 # process.p = cms.Path(process.pileupWeight*
 #                      process.ttbarSingleLepton)
 process.p = cms.Path(process.flatGenWeights +
-                     process.filterRECOMC + 
-		     process.filterTrigMU + process.filterTrigEL + process.filterTrigELHT +
+                     process.filterRECOMC + process.filterRECO +
+                     process.filterTrigMU + process.filterTrigEL + process.filterTrigELHT +
                      process.pileupWeight +
                      process.ttbbLepJets + process.ttbbLepJetsQCD)
